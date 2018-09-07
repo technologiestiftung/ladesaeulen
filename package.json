@@ -1,0 +1,16 @@
+{
+  "name": "ladesaeulen",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "seb_meier",
+  "license": "MIT",
+  "dependencies": {
+    "d3": "^5.7.0",
+    "fs": "0.0.1-security",
+    "turf": "^3.0.14"
+  }
+}
