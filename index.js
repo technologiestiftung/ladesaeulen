@@ -4,6 +4,8 @@ const parser_sem = d3.dsvFormat(';')
 const parser_com = d3.dsvFormat(',')
 const turf = require('turf')
 
+let min_dist = typeof process.argv[2] !== 'undefined' ? process.argv[2] : 0.001
+
 let master = []
 
 let file2 = JSON.parse(fs.readFileSync('./data/openchargemap_final.json', 'utf8'))
@@ -253,6 +255,8 @@ file4.forEach(f=>{
 
 //Go through the file and remove from top down (keep openchargemap if possible)
 
+let dcount = 0
+
 let i = 0
 while(i<master.length){
 	let j = i+1
@@ -260,14 +264,18 @@ while(i<master.length){
 		if(master[i].properties.source != master[j].properties.source){
 			let d = turf.distance(master[i], master[j])
 			if(d == 0){
+				if(!('merge' in master[i].properties)) master[i].properties['merge'] = []
+				master[i].properties.merge.push(master[j].properties)
 				master.splice(j,1)
-			}else if(d<0.001){
+			}else if(d<min_dist){ //0.001 = 1 Meter
 				if(master[i].properties.source == 'allegoBerlin' && master[j].properties.source == 'netzagentur' && master[j].properties.data.Betreiber == 'Allego GmbH'){
-					master[j].properties['merge'] = master[i].properties
+					if(!('merge' in master[j].properties)) master[j].properties['merge'] = []
+					master[j].properties.merge.push(master[i].properties)
 					master.splice(i,1)
 					j = master.length
 					i--
 				}else{
+					dcount++
 					//console.log(d,i,j,master[i].properties.id, master[j].properties.id, master[i].properties.source,master[j].properties.source)
 					master[j].properties['duplicate'] = true
 				}
@@ -277,5 +285,7 @@ while(i<master.length){
 	}
 	i++
 }
+
+console.log(master.length, dcount)
 
 fs.writeFileSync('./output/stations.json', JSON.stringify(turf.featureCollection(master)))
