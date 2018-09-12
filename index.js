@@ -255,7 +255,7 @@ file4.forEach(f=>{
 
 //Go through the file and remove from top down (keep openchargemap if possible)
 
-let dcount = 0, ddcount = 0, dddcount = 0
+let dcount = 0, ddcount = 0, dddcount = 0, shorts = 0
 
 console.log(master.length)
 
@@ -276,7 +276,12 @@ while(i<master.length){
 
 		let j = i+1
 		while(j<master.length){
-			if(master[i].properties.source != master[j].properties.source){
+			if(master[i].properties.source == master[j].properties.source){
+				let d = turf.distance(master[i], master[j])
+				if(d<min_dist){
+					shorts++
+				}
+			}else if(master[i].properties.source != master[j].properties.source){
 				let d = turf.distance(master[i], master[j])
 
 				if(d == 0){
@@ -318,8 +323,9 @@ master.forEach(d=>{
 	}
 })
 
-console.log(counts)
-console.log(types)
+console.log('counts', counts)
+console.log('types', types)
+console.log('shorts', shorts)
 
 console.log(master.length, dcount, ddcount,dddcount)
 
