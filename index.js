@@ -255,37 +255,73 @@ file4.forEach(f=>{
 
 //Go through the file and remove from top down (keep openchargemap if possible)
 
-let dcount = 0
+let dcount = 0, ddcount = 0, dddcount = 0
+
+console.log(master.length)
+
+let privates = []
+let nogo = ['Private - For Staff, Visitors or Customers', 'Privately Owned - Notice Required', 'Private - Restricted Access']
 
 let i = 0
 while(i<master.length){
-	let j = i+1
-	while(j<master.length){
-		if(master[i].properties.source != master[j].properties.source){
-			let d = turf.distance(master[i], master[j])
-			if(d == 0){
-				if(!('merge' in master[i].properties)) master[i].properties['merge'] = []
-				master[i].properties.merge.push(master[j].properties)
-				master.splice(j,1)
-			}else if(d<min_dist){ //0.001 = 1 Meter
-				if(master[i].properties.source == 'allegoBerlin' && master[j].properties.source == 'netzagentur' && master[j].properties.data.Betreiber == 'Allego GmbH'){
-					if(!('merge' in master[j].properties)) master[j].properties['merge'] = []
-					master[j].properties.merge.push(master[i].properties)
-					master.splice(i,1)
-					j = master.length
-					i--
-				}else{
-					dcount++
-					//console.log(d,i,j,master[i].properties.id, master[j].properties.id, master[i].properties.source,master[j].properties.source)
-					master[j].properties['duplicate'] = true
+
+	if(('data' in master[i].properties) && ('UsageType' in master[i].properties.data) && (master[i].properties.data.UsageType != null) && ('Title' in master[i].properties.data.UsageType)&& nogo.indexOf(master[i].properties.data.UsageType.Title)>-1){
+		privates.push(JSON.parse(JSON.stringify(master[i])))
+		master.splice(i,1)
+		i--
+	}else if(('data' in master[i].properties) && ('Connections' in master[i].properties.data) && (master[i].properties.data.Connections.length > 0) && ('StatusType' in master[i].properties.data.Connections[0]) && master[i].properties.data.Connections[0].StatusType != null && master[i].properties.data.Connections[0].StatusType.IsOperational == false){
+		master.splice(i,1)
+		i--
+	}else {
+
+		let j = i+1
+		while(j<master.length){
+			if(master[i].properties.source != master[j].properties.source){
+				let d = turf.distance(master[i], master[j])
+
+				if(d == 0){
+					if(!('merge' in master[i].properties)) master[i].properties['merge'] = []
+					master[i].properties.merge.push(master[j].properties)
+					master.splice(j,1)
+					dddcount++
+				}else if(d<min_dist){ //0.001 = 1 Meter
+					if(master[i].properties.source == 'allegoBerlin' && master[j].properties.source == 'netzagentur' && master[j].properties.data.Betreiber == 'Allego GmbH'){
+						if(!('merge' in master[j].properties)) master[j].properties['merge'] = []
+						master[j].properties.merge.push(master[i].properties)
+						master.splice(i,1)
+						j = master.length
+						i--
+						ddcount++
+					}else{
+						dcount++
+						//console.log(d,i,j,master[i].properties.id, master[j].properties.id, master[i].properties.source,master[j].properties.source)
+						//master[j].properties['duplicate'] = true
+						master.splice(j,1)
+					}
 				}
 			}
+			j++
 		}
-		j++
 	}
 	i++
 }
 
-console.log(master.length, dcount)
+let counts = {}, types = {}
+
+master.forEach(d=>{
+	if(!(d.properties.source in counts)) counts[d.properties.source] = 0
+	counts[d.properties.source]++
+
+	if(('data' in d.properties) && ('UsageType' in d.properties.data) && (d.properties.data.UsageType != null) && ('Title' in d.properties.data.UsageType)){
+		if(!(d.properties.data.UsageType.Title in types)) types[d.properties.data.UsageType.Title] = 0
+		types[d.properties.data.UsageType.Title]++
+	}
+})
+
+console.log(counts)
+console.log(types)
+
+console.log(master.length, dcount, ddcount,dddcount)
 
 fs.writeFileSync('./output/stations.json', JSON.stringify(turf.featureCollection(master)))
+fs.writeFileSync('./output/privates.json', JSON.stringify(turf.featureCollection(privates)))
