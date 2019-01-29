@@ -10,7 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "d3": "^5.7.0",
-    "fs": "0.0.1-security",
+    "fs": "0.0.2",
     "turf": "^3.0.14"
   }
 }
